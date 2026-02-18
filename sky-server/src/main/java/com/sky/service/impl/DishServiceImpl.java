@@ -88,6 +88,7 @@ public class DishServiceImpl implements DishService {
         }
 
         //删除菜品表中的菜品数据
+        /*
         for(Long id : ids) {
             dishMapper.deleteByIds(id);
 
@@ -95,5 +96,11 @@ public class DishServiceImpl implements DishService {
             //无需查找，无关有没有直接尝试一次删除
             dishFlavorMapper.deleteByDishId(id);
         }
+         */
+        //根据菜品id集合批量删除菜品
+        dishMapper.deleteByIds(ids);
+
+        //根据菜品id集合批量删除菜品口味
+        dishFlavorMapper.deleteByDishIds(ids);
     }
 }
