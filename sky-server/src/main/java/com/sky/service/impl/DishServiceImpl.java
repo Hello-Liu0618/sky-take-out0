@@ -61,6 +61,11 @@ public class DishServiceImpl implements DishService {
         }
     }
 
+    /**
+     * 菜品分页查询
+     * @param dishPageQueryDTO
+     * @return
+     */
     public PageResult pageQuery(DishPageQueryDTO dishPageQueryDTO) {
         PageHelper.startPage(dishPageQueryDTO.getPage(), dishPageQueryDTO.getPageSize());
         Page<DishVO> page = dishMapper.pageQuery(dishPageQueryDTO);
@@ -104,6 +109,11 @@ public class DishServiceImpl implements DishService {
         dishFlavorMapper.deleteByDishIds(ids);
     }
 
+    /**
+     * 根据菜品Id查询菜品数据并带有口味数据
+     * @param id
+     * @return
+     */
     public DishVO getByIdWithFlavor(Long id) {
         //根据Id查询菜品数据
         Dish dish = dishMapper.getById(id);
@@ -119,6 +129,10 @@ public class DishServiceImpl implements DishService {
         return dishVO;
     }
 
+    /**
+     * 更新菜品信息并带有口味数据
+     * @param dishDTO
+     */
     public void updateWithFlavor(DishDTO dishDTO) {
         //修改菜品表基本信息
         Dish dish = new Dish();
@@ -136,9 +150,20 @@ public class DishServiceImpl implements DishService {
         }
     }
 
+    /**
+     * 启用禁用菜品
+     * @param status
+     * @param id
+     */
     public void startOrStop(Integer status, Long id) {
         Dish dish = Dish.builder().status(status).id(id).build();
         dishMapper.update(dish);
+    }
+
+    public List<Dish> list(Long categoryId) {
+        Dish dish = Dish.builder().status(StatusConstant.ENABLE).categoryId(categoryId).build();
+        List<Dish> list = dishMapper.list(dish);
+        return list;
     }
 
 }
