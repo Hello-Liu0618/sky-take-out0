@@ -8,16 +8,19 @@ import com.sky.dto.DishDTO;
 import com.sky.dto.DishPageQueryDTO;
 import com.sky.entity.Dish;
 import com.sky.entity.DishFlavor;
+import com.sky.entity.Setmeal;
 import com.sky.exception.DeletionNotAllowedException;
 import com.sky.mapper.DishFlavorMapper;
 import com.sky.mapper.DishMapper;
 import com.sky.mapper.SetmealDishMapper;
+import com.sky.mapper.SetmealMapper;
 import com.sky.result.PageResult;
 import com.sky.service.DishService;
 import com.sky.vo.DishVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +39,12 @@ public class DishServiceImpl implements DishService {
 
     @Autowired
     private SetmealDishMapper setmealDishMapper;
+
+    @Autowired
+    private SetmealMapper setmealMapper;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     /**
      * 新增菜品的对应的口味
@@ -81,6 +90,11 @@ public class DishServiceImpl implements DishService {
         //判断当前菜品是否能够删除(即判断是否存在起售中的菜品)
         for (Long id : ids) {
             Dish dish =  dishMapper.getById(id);
+            //标记为脏位
+            String key = "dish_" + dish.getCategoryId();
+            log.info("key: {} 标记缓存脏位", key);
+            redisTemplate.opsForHash().put("dirtyByte", key, "1");
+
             if( dish.getStatus() == StatusConstant.ENABLE) {
                 //当前菜品处于起售中状态, 不能删除
                 throw new DeletionNotAllowedException(MessageConstant.DISH_ON_SALE);
@@ -137,8 +151,17 @@ public class DishServiceImpl implements DishService {
     public void updateWithFlavor(DishDTO dishDTO) {
         //修改菜品表基本信息
         Dish dish = new Dish();
+        Long originCategoryId = dishMapper.getById(dishDTO.getId()).getCategoryId();
         BeanUtils.copyProperties(dishDTO, dish);
         dishMapper.update(dish);
+
+        //标记缓存脏位
+        String key = "dish_" + dish.getCategoryId();
+        String key1 = "dish_" + originCategoryId;
+        log.info("key: {} 标记缓存脏位", key);
+        log.info("key: {} 标记缓存脏位", key1);
+        redisTemplate.opsForHash().put("dirtyByte", key, "1");
+        redisTemplate.opsForHash().put("dirtyByte", key1, "1");
 
         //删除原有口味数据，插入新的口味数据
         dishFlavorMapper.deleteByDishId(dishDTO.getId());
@@ -157,7 +180,25 @@ public class DishServiceImpl implements DishService {
      * @param id
      */
     public void startOrStop(Integer status, Long id) {
+        //判断是否关联了起售中的套餐，若是则不能停售
+        if (status == StatusConstant.DISABLE) {
+            List<Long> ids = new ArrayList<>();
+            ids.add(id);
+            List<Long> setmealIds = setmealDishMapper.getSetmealIdsByDishIds(ids);
+            setmealIds.forEach(setmealId -> {
+                Setmeal setmeal = setmealMapper.getById(setmealId);
+                if(setmeal.getStatus() == StatusConstant.ENABLE) {
+                    throw new DeletionNotAllowedException(MessageConstant.DISH_BE_RELATED_BY_ON_SALE_SETMEAL);
+                }
+            });
+        }
         Dish dish = Dish.builder().status(status).id(id).build();
+
+        //标记缓存脏位
+        String key = "dish_" + dishMapper.getById(id).getCategoryId();
+        log.info("key: {} 标记缓存脏位", key);
+        redisTemplate.opsForHash().put("dirtyByte", key, "1");
+
         dishMapper.update(dish);
     }
 

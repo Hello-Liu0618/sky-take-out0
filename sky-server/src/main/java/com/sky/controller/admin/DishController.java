@@ -12,6 +12,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,6 +28,8 @@ public class DishController {
 
     @Autowired
     private DishService dishService;
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     /**
      * 新增菜品
@@ -38,6 +41,11 @@ public class DishController {
     public Result save(@RequestBody DishDTO dishDTO) {
         log.info("新增菜品 {}", dishDTO);
         dishService.saveWithFlavor(dishDTO);
+        //标记缓存脏位
+        String key = "dish_" + dishDTO.getCategoryId();
+        log.info("key: {} 标记缓存脏位", key);
+        redisTemplate.opsForHash().put("dirtyByte", key, "1");//标记为缓存脏位
+
         return Result.success();
     }
 
@@ -64,7 +72,7 @@ public class DishController {
     @ApiOperation("菜品批量删除")
     public Result delete(@RequestParam List<Long> ids) {
         log.info("菜品批量删除: {}", ids);
-        dishService.deleteBatch(ids);
+        dishService.deleteBatch(ids);//函数内部标记缓存脏位
         return Result.success();
     }
 
@@ -90,7 +98,7 @@ public class DishController {
     @ApiOperation("修改菜品")
     public Result update(@RequestBody DishDTO dishDTO) {
         log.info("修改菜品: {}", dishDTO);
-        dishService.updateWithFlavor(dishDTO);
+        dishService.updateWithFlavor(dishDTO);//函数内部标记缓存脏位
         return Result.success();
     }
 
@@ -104,7 +112,7 @@ public class DishController {
     @ApiOperation("启用禁用菜品")
     public Result startOrStop(@PathVariable Integer status, Long id) {
         log.info("启用禁用菜品: {}, {}", status, id);
-        dishService.startOrStop(status, id);
+        dishService.startOrStop(status, id);//函数内部标记缓存脏位
         return Result.success();
     }
 
