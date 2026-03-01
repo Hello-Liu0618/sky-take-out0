@@ -30,4 +30,11 @@ public interface ShoppingCartMapper {
      * @param shoppingCart
      */
     void insert(ShoppingCart shoppingCart);
+
+    /**
+     * 根据userId查询购物车信息
+     * @param userId
+     * @return
+     */
+    List<ShoppingCart> getByUserId(Long userId);
 }

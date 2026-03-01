@@ -67,4 +67,10 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
         }
         return Result.success();
     }
+
+    public List<ShoppingCart> list() {
+        Long userId = BaseContext.getCurrentId();
+        List<ShoppingCart> list = shoppingCartMapper.getByUserId(userId);
+        return list;
+    }
 }

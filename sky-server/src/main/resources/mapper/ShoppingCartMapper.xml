@@ -23,4 +23,8 @@
         insert into shopping_cart (name, image, user_id, dish_id, setmeal_id, dish_flavor, number, amount, create_time) VALUES
         (#{name}, #{image}, #{userId}, #{dishId}, #{setmealId}, #{dishFlavor}, #{number}, #{amount}, #{createTime})
     </insert>
+
+    <select id="getByUserId" resultType="com.sky.entity.ShoppingCart">
+        select * from shopping_cart where user_id = #{userId} order by create_time desc
+    </select>
 </mapper>
