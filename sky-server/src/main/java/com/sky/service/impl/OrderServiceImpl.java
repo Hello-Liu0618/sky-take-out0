@@ -209,4 +209,31 @@ public class OrderServiceImpl implements OrderService {
 
         return orderVO;
     }
+
+    /**
+     * 取消订单
+     * @param id
+     */
+    public void cancel(Long id){
+        Orders ordersDB = orderMapper.getById(id);
+        if (ordersDB == null) {
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+
+        Integer status = ordersDB.getStatus();
+        if (status > 2) {
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+
+        Orders orders = new Orders();
+        orders.setId(ordersDB.getId());
+        if (ordersDB.getStatus().equals(Orders.TO_BE_CONFIRMED)) {
+            //微信退款，此处不处理
+            orders.setPayStatus(Orders.REFUND);
+        }
+        orders.setStatus(Orders.CANCELLED);
+        orders.setCancelReason("用户取消");
+        orders.setOrderTime(LocalDateTime.now());
+        orderMapper.update(orders);
+    }
 }
