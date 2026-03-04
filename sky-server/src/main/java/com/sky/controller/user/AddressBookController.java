@@ -103,7 +103,7 @@ public class AddressBookController {
         addressBook.setUserId(BaseContext.getCurrentId());
         List<AddressBook> list = addressBookService.list(addressBook);
 
-        if (list != null && list.size() == 1) {
+            if (list != null && list.size() == 1) {
             return Result.success(list.get(0));
         }
 

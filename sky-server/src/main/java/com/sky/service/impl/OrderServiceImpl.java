@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
+import com.sky.constant.StatusConstant;
 import com.sky.context.BaseContext;
 import com.sky.dto.OrdersPageQueryDTO;
 import com.sky.dto.OrdersPaymentDTO;
@@ -45,6 +46,12 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private SetmealMapper setmealMapper;
+
+    @Autowired
+    private DishMapper dishMapper;
 
     public OrderSubmitVO submitOrder(OrdersSubmitDTO orderSubmitDTO) {
 
@@ -235,5 +242,46 @@ public class OrderServiceImpl implements OrderService {
         orders.setCancelReason("用户取消");
         orders.setOrderTime(LocalDateTime.now());
         orderMapper.update(orders);
+    }
+
+    /**
+     * 再来一单
+     * @param id
+     */
+    public void repetition(Long id){//此方法将指定订单中的商品加入到购物车中
+        //查找得到订单信息
+        Long userId = BaseContext.getCurrentId();
+        List<OrderDetail> orderDetailList = orderDetailMapper.getByOrderId(id);
+        if (orderDetailList == null || orderDetailList.isEmpty()) {
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+
+        List<ShoppingCart> shoppingCartList = new ArrayList<>();
+        orderDetailList.forEach(item -> {
+            //检查是否能够加入购物车
+            Long dishId = item.getDishId();
+            if (dishId == null) {
+                Long setmealId = item.getSetmealId();
+                if ( setmealMapper.getById(setmealId).getStatus() == StatusConstant.DISABLE ) {
+                    throw new ShoppingCartBusinessException(MessageConstant.SHOPPING_CART_ADD_FAILED);
+                }
+            } else {
+                if (dishMapper.getById(dishId).getStatus() == StatusConstant.DISABLE) {
+                    throw new ShoppingCartBusinessException(MessageConstant.SHOPPING_CART_ADD_FAILED);
+                }
+            }
+
+            ShoppingCart shoppingCart = new ShoppingCart();
+            BeanUtils.copyProperties(item, shoppingCart);
+
+            shoppingCart.setUserId(userId);
+            shoppingCart.setCreateTime(LocalDateTime.now());
+
+            shoppingCartList.add(shoppingCart);
+        });
+        //插入之前先清空购物车
+        shoppingCartMapper.cleanByUserId(userId);
+
+        shoppingCartMapper.insertBatch(shoppingCartList);
     }
 }
