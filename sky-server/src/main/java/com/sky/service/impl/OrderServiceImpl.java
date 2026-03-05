@@ -18,6 +18,7 @@ import com.sky.result.PageResult;
 import com.sky.result.Result;
 import com.sky.service.OrderService;
 import com.sky.vo.OrderPaymentVO;
+import com.sky.vo.OrderStatisticsVO;
 import com.sky.vo.OrderSubmitVO;
 import com.sky.vo.OrderVO;
 import org.springframework.beans.BeanUtils;
@@ -305,5 +306,23 @@ public class OrderServiceImpl implements OrderService {
             orderVOList.add(orderVO);
         });
         return new PageResult(page.getTotal(), orderVOList);
+    }
+
+    /**
+     * 各个状态的订单数量统计
+     * @return
+     */
+    public OrderStatisticsVO statistics() {
+        OrderStatisticsVO orderStatisticsVO = new OrderStatisticsVO();
+
+        Integer confirmed = (orderMapper.getByStatus(Orders.CONFIRMED)).size();
+        orderStatisticsVO.setConfirmed(confirmed);
+
+        Integer toBeConfirmed = (orderMapper.getByStatus(Orders.TO_BE_CONFIRMED)).size();
+        orderStatisticsVO.setToBeConfirmed(toBeConfirmed);
+
+        Integer deliveryInProgress = (orderMapper.getByStatus(Orders.DELIVERY_IN_PROGRESS)).size();
+        orderStatisticsVO.setDeliveryInProgress(deliveryInProgress);
+        return orderStatisticsVO;
     }
 }
