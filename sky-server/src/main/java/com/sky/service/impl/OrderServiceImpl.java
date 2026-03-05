@@ -210,6 +210,13 @@ public class OrderServiceImpl implements OrderService {
         //获取订单详情
         List<OrderDetail> orderDetailList = orderDetailMapper.getByOrderId(orderId);
         orderVO.setOrderDetailList(orderDetailList);
+        List<String> orderDishList = new ArrayList<>();
+        orderDetailList.forEach(item -> {
+            String dish = item.getName() + "*" + item.getNumber();
+            orderDishList.add(dish);
+        });
+        String orderDishes = String.join(", ", orderDishList);
+        orderVO.setOrderDishes(orderDishes);
 
         AddressBook addressBook = addressBookMapper.getById(order.getAddressBookId());
         String address = addressBook.getProvinceName()+addressBook.getCityName()+addressBook.getDistrictName()+addressBook.getDetail();
