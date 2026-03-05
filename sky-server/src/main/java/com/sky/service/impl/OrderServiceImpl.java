@@ -6,6 +6,7 @@ import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
 import com.sky.constant.StatusConstant;
 import com.sky.context.BaseContext;
+import com.sky.dto.OrdersConfirmDTO;
 import com.sky.dto.OrdersPageQueryDTO;
 import com.sky.dto.OrdersPaymentDTO;
 import com.sky.dto.OrdersSubmitDTO;
@@ -345,5 +346,15 @@ public class OrderServiceImpl implements OrderService {
         Integer deliveryInProgress = (orderMapper.getByStatus(Orders.DELIVERY_IN_PROGRESS)).size();
         orderStatisticsVO.setDeliveryInProgress(deliveryInProgress);
         return orderStatisticsVO;
+    }
+
+    /**
+     * 接单
+     * @param ordersConfirmDTO
+     */
+    public void confirm(OrdersConfirmDTO ordersConfirmDTO) {
+        Long orderId = ordersConfirmDTO.getId();
+        Orders orders = Orders.builder().id(orderId).status(Orders.CONFIRMED).build();
+        orderMapper.update(orders);
     }
 }
