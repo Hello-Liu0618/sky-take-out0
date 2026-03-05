@@ -298,10 +298,24 @@ public class OrderServiceImpl implements OrderService {
         page.forEach(item -> {
             OrderVO orderVO = new OrderVO();
             BeanUtils.copyProperties(item, orderVO);
+
             //查询得到orderDetail数据
             Long orderId = item.getId();
             List<OrderDetail> orderDetailList = orderDetailMapper.getByOrderId(orderId);
             orderVO.setOrderDetailList(orderDetailList);
+
+            //拼接得到订单菜品字符串
+            List<String> orderDishList = new ArrayList<>();
+            orderDetailList.forEach(item1 -> {
+                String str = item1.getName() + "*" + item1.getNumber();
+                orderDishList.add(str);
+            });
+            orderVO.setOrderDishes(String.join(", ", orderDishList));
+
+            //拼接得到地址字符串
+            AddressBook addressBook = addressBookMapper.getById(item.getAddressBookId());
+            String address = addressBook.getProvinceName()+addressBook.getCityName()+addressBook.getDistrictName()+addressBook.getDetail();
+            orderVO.setAddress(address);
 
             orderVOList.add(orderVO);
         });
