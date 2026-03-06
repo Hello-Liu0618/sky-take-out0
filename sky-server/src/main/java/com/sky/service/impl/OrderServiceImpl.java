@@ -6,10 +6,7 @@ import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
 import com.sky.constant.StatusConstant;
 import com.sky.context.BaseContext;
-import com.sky.dto.OrdersConfirmDTO;
-import com.sky.dto.OrdersPageQueryDTO;
-import com.sky.dto.OrdersPaymentDTO;
-import com.sky.dto.OrdersSubmitDTO;
+import com.sky.dto.*;
 import com.sky.entity.*;
 import com.sky.exception.AddressBookBusinessException;
 import com.sky.exception.OrderBusinessException;
@@ -250,6 +247,7 @@ public class OrderServiceImpl implements OrderService {
         orders.setStatus(Orders.CANCELLED);
         orders.setCancelReason("用户取消");
         orders.setOrderTime(LocalDateTime.now());
+        orders.setCancelTime(LocalDateTime.now());
         orderMapper.update(orders);
     }
 
@@ -356,5 +354,23 @@ public class OrderServiceImpl implements OrderService {
         Long orderId = ordersConfirmDTO.getId();
         Orders orders = Orders.builder().id(orderId).status(Orders.CONFIRMED).build();
         orderMapper.update(orders);
+    }
+
+    /**
+     * 拒单
+     * @param ordersRejectionDTO
+     */
+    public void rejection(OrdersRejectionDTO ordersRejectionDTO) {
+        Long  orderId = ordersRejectionDTO.getId();
+        String rejectionReason = ordersRejectionDTO.getRejectionReason();
+        Orders orders = orderMapper.getById(orderId);
+        if ( orders.getStatus() != Orders.TO_BE_CONFIRMED ) {
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+        if ( orders.getPayStatus() == Orders.PAID ) {
+            //微信退款, 此处不处理
+        }
+        Orders newOrders = Orders.builder().id(orderId).status(Orders.CANCELLED).rejectionReason(rejectionReason).cancelReason("商家拒单: " + rejectionReason).cancelTime(LocalDateTime.now()).build();
+        orderMapper.update(newOrders);
     }
 }
