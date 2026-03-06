@@ -16,6 +16,10 @@ sky:
     port:
     password:
     database:
-    wechat:
-      appid:
-      secret:
+  wechat:
+    appid:
+    secret:
+  shop:
+    address:
+  baidu:
+    ak:
