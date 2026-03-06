@@ -240,13 +240,12 @@ public class OrderServiceImpl implements OrderService {
 
         Orders orders = new Orders();
         orders.setId(ordersDB.getId());
-        if (ordersDB.getStatus().equals(Orders.TO_BE_CONFIRMED)) {
+        if (ordersDB.getPayStatus().equals(Orders.PAID)) {
             //微信退款，此处不处理
             orders.setPayStatus(Orders.REFUND);
         }
         orders.setStatus(Orders.CANCELLED);
         orders.setCancelReason("用户取消");
-        orders.setOrderTime(LocalDateTime.now());
         orders.setCancelTime(LocalDateTime.now());
         orderMapper.update(orders);
     }
@@ -269,11 +268,13 @@ public class OrderServiceImpl implements OrderService {
             Long dishId = item.getDishId();
             if (dishId == null) {
                 Long setmealId = item.getSetmealId();
-                if ( setmealMapper.getById(setmealId).getStatus() == StatusConstant.DISABLE ) {
+                Setmeal setmeal = setmealMapper.getById(setmealId);
+                if ( setmeal == null || setmeal.getStatus() == StatusConstant.DISABLE ) {//若为套餐, 检查是否存在或为起售中
                     throw new ShoppingCartBusinessException(MessageConstant.SHOPPING_CART_ADD_FAILED);
                 }
             } else {
-                if (dishMapper.getById(dishId).getStatus() == StatusConstant.DISABLE) {
+                Dish dish = dishMapper.getById(dishId);
+                if ( dish == null || dish.getStatus() == StatusConstant.DISABLE) {//若为菜品, 检查是否存在或为起售中
                     throw new ShoppingCartBusinessException(MessageConstant.SHOPPING_CART_ADD_FAILED);
                 }
             }
@@ -367,10 +368,41 @@ public class OrderServiceImpl implements OrderService {
         if ( orders.getStatus() != Orders.TO_BE_CONFIRMED ) {
             throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
         }
+        Orders newOrders = Orders.builder()
+                .id(orderId)
+                .status(Orders.CANCELLED)
+                .rejectionReason(rejectionReason)
+                .cancelReason("商家拒单: " + rejectionReason)
+                .cancelTime(LocalDateTime.now())
+                .build();
         if ( orders.getPayStatus() == Orders.PAID ) {
             //微信退款, 此处不处理
+            newOrders.setPayStatus(Orders.REFUND);
         }
-        Orders newOrders = Orders.builder().id(orderId).status(Orders.CANCELLED).rejectionReason(rejectionReason).cancelReason("商家拒单: " + rejectionReason).cancelTime(LocalDateTime.now()).build();
         orderMapper.update(newOrders);
+    }
+
+    /**
+     * 商家取消订单
+     * @param ordersCancelDTO
+     */
+    public void adminCancel(OrdersCancelDTO ordersCancelDTO) {
+        Long orderId = ordersCancelDTO.getId();
+        String cancelReason = ordersCancelDTO.getCancelReason();
+
+        Orders orders = orderMapper.getById(orderId);
+        if ( orders ==  null ) {
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+        Orders orders1 = Orders.builder()
+                .id(orderId)
+                .status(Orders.CANCELLED)
+                .cancelReason("商家取消: " + cancelReason)
+                .cancelTime(LocalDateTime.now()).build();
+        if ( orders.getPayStatus() == Orders.PAID ) {
+            //微信退款, 此处不处理
+            orders1.setPayStatus(Orders.REFUND);
+        }
+        orderMapper.update(orders1);
     }
 }
