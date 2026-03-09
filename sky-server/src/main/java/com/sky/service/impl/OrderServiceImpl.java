@@ -22,6 +22,7 @@ import com.sky.vo.OrderPaymentVO;
 import com.sky.vo.OrderStatisticsVO;
 import com.sky.vo.OrderSubmitVO;
 import com.sky.vo.OrderVO;
+import com.sky.websocket.WebSocketServer;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -57,6 +58,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private DishMapper dishMapper;
+
+    @Autowired
+    private WebSocketServer webSocketServer;
 
     @Value("${sky.shop.address}")
     private String shopAddress;
@@ -171,6 +175,15 @@ public class OrderServiceImpl implements OrderService {
                 .build();
 
         orderMapper.update(orders);
+
+        //通过websocket向客户端推送消息
+        Map map = new HashMap();
+        map.put("type", 1);//表示来单提醒
+        map.put("orderId", ordersDB.getId());
+        map.put("content", "订单号: " + outTradeNo);
+
+        String jsonString = JSON.toJSONString(map);
+        webSocketServer.sendToAllClient(jsonString);
     }
 
     /**
@@ -516,5 +529,26 @@ public class OrderServiceImpl implements OrderService {
             //配送距离超过5000米
             throw new OrderBusinessException("超出配送范围");
         }
+    }
+
+    /**
+     * 用户催单
+     * @param id
+     */
+    public void reminder(Long id) {
+        Orders orders = orderMapper.getById(id);
+        //检验订单是否存在
+        if ( orders ==  null ) {
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+        String orderNum = orders.getNumber();
+        //通过websocket向客户端推送消息
+        Map map = new HashMap();
+        map.put("type", 2);//表示客户催单
+        map.put("orderId", id);
+        map.put("content", "订单号: " + orderNum);
+
+        String jsonString = JSON.toJSONString(map);
+        webSocketServer.sendToAllClient(jsonString);
     }
 }
