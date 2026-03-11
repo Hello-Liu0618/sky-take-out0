@@ -4,6 +4,7 @@ import com.sky.entity.Orders;
 import com.sky.mapper.OrderMapper;
 import com.sky.mapper.UserMapper;
 import com.sky.service.ReportService;
+import com.sky.vo.OrderReportVO;
 import com.sky.vo.TurnoverReportVO;
 import com.sky.vo.UserReportVO;
 import lombok.extern.slf4j.Slf4j;
@@ -118,5 +119,69 @@ public class ReportServiceImpl implements ReportService {
                 .newUserList(newUserListString)
                 .build();
         return userReportVO;
+    }
+
+    /**
+     * 统计指定日期区间内的订单数据
+     * @param begin
+     * @param end
+     * @return
+     */
+    public OrderReportVO getOrdersStatistics(LocalDate begin, LocalDate end) {
+        List<LocalDate> dates = new ArrayList<>();
+        LocalDate date = begin;
+        while (!date.isAfter(end)) {
+            dates.add(date);
+            date = date.plusDays(1);
+        }
+        List<Long> orderCountList =  new ArrayList<>();
+        List<Long> validOrderCountList =  new ArrayList<>();
+        dates.forEach(date1 -> {
+            LocalDateTime dateTimeMin = LocalDateTime.of(date1, LocalTime.MIN);
+            LocalDateTime dateTimeMax = LocalDateTime.of(date1, LocalTime.MAX);
+            Map mapTotal =  new HashMap();
+            Map mapValid =  new HashMap();
+            mapTotal.put("begin", dateTimeMin);
+            mapTotal.put("end", dateTimeMax);
+            Long totalOrder = orderMapper.countByMap(mapTotal);
+            if( null == totalOrder){
+                totalOrder = 0L;
+            }
+            orderCountList.add(totalOrder);
+
+            mapValid.put("begin", dateTimeMin);
+            mapValid.put("end", dateTimeMax);
+            mapValid.put("status", Orders.COMPLETED);
+            Long validOrder = orderMapper.countByMap(mapValid);
+            if( null == validOrder){
+                validOrder = 0L;
+            }
+            validOrderCountList.add(validOrder);
+        });
+
+        Integer totalOrderNum = orderMapper.countTotal();
+        if( null == totalOrderNum){
+            totalOrderNum = 0;
+        }
+
+        Integer validOrderNum = orderMapper.countValid();
+        if( null == validOrderNum){
+            validOrderNum = 0;
+        }
+
+        Double orderCompletionRate = Double.longBitsToDouble(validOrderNum) / Double.longBitsToDouble(totalOrderNum);
+
+        String dateListString = StringUtils.join(dates, ",");
+        String validOrderCounteListString = StringUtils.join(validOrderCountList, ",");
+        String orderCountListString = StringUtils.join(orderCountList, ",");
+        OrderReportVO orderReportVO = OrderReportVO.builder()
+                .dateList(dateListString)
+                .orderCountList(orderCountListString)
+                .validOrderCountList(validOrderCounteListString)
+                .orderCompletionRate(orderCompletionRate)
+                .totalOrderCount(totalOrderNum)
+                .validOrderCount(validOrderNum)
+                .build();
+        return orderReportVO;
     }
 }

@@ -71,4 +71,25 @@ public interface OrderMapper {
      * @return
      */
     Double sumByMap(Map map);
+
+    /**
+     * 根据Map统计订单数
+     * @param map
+     * @return
+     */
+    Long countByMap(Map map);
+
+    /**
+     * 统计订单总数
+     * @return
+     */
+    @Select("select count(id) from orders")
+    Integer countTotal();
+
+    /**
+     * 统计有效订单数
+     * @return
+     */
+    @Select("select count(id) from orders where status=5")
+    Integer countValid();
 }
