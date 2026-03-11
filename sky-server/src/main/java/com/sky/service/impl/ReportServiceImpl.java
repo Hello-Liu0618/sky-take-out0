@@ -90,23 +90,23 @@ public class ReportServiceImpl implements ReportService {
             dates.add(date);
             date = date.plusDays(1);
         }
-        List<Long> totalUserList =  new ArrayList<>();
-        List<Long> newUserList =  new ArrayList<>();
+        List<Integer> totalUserList =  new ArrayList<>();
+        List<Integer> newUserList =  new ArrayList<>();
         dates.forEach(date1 -> {
             //根据date日期查询对应的用户数据
             LocalDateTime dateTimeMin = LocalDateTime.of(date1, LocalTime.MIN);
             LocalDateTime dateTimeMax = LocalDateTime.of(date1, LocalTime.MAX);
             Map map = new HashMap();
             map.put("end", dateTimeMax);
-            Long userTotal = userMapper.sumByMap(map);
+            Integer userTotal = userMapper.countByMap(map);
             if( null == userTotal){
-                userTotal = 0L;
+                userTotal = 0;
             }
             totalUserList.add(userTotal);
             map.put("begin", dateTimeMin);
-            Long userNew = userMapper.sumByMap(map);
+            Integer userNew = userMapper.countByMap(map);
             if( null == userNew){
-                userNew = 0L;
+                userNew = 0;
             }
             newUserList.add(userNew);
         });
@@ -136,8 +136,8 @@ public class ReportServiceImpl implements ReportService {
             dates.add(date);
             date = date.plusDays(1);
         }
-        List<Long> orderCountList =  new ArrayList<>();
-        List<Long> validOrderCountList =  new ArrayList<>();
+        List<Integer> orderCountList =  new ArrayList<>();
+        List<Integer> validOrderCountList =  new ArrayList<>();
         dates.forEach(date1 -> {
             LocalDateTime dateTimeMin = LocalDateTime.of(date1, LocalTime.MIN);
             LocalDateTime dateTimeMax = LocalDateTime.of(date1, LocalTime.MAX);
@@ -145,18 +145,18 @@ public class ReportServiceImpl implements ReportService {
             Map mapValid =  new HashMap();
             mapTotal.put("begin", dateTimeMin);
             mapTotal.put("end", dateTimeMax);
-            Long totalOrder = orderMapper.countByMap(mapTotal);
+            Integer totalOrder = orderMapper.countByMap(mapTotal);
             if( null == totalOrder){
-                totalOrder = 0L;
+                totalOrder = 0;
             }
             orderCountList.add(totalOrder);
 
             mapValid.put("begin", dateTimeMin);
             mapValid.put("end", dateTimeMax);
             mapValid.put("status", Orders.COMPLETED);
-            Long validOrder = orderMapper.countByMap(mapValid);
+            Integer validOrder = orderMapper.countByMap(mapValid);
             if( null == validOrder){
-                validOrder = 0L;
+                validOrder = 0;
             }
             validOrderCountList.add(validOrder);
         });

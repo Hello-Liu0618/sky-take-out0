@@ -79,7 +79,7 @@ public interface OrderMapper {
      * @param map
      * @return
      */
-    Long countByMap(Map map);
+    Integer countByMap(Map map);
 
     /**
      * 统计订单总数

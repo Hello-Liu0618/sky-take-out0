@@ -38,5 +38,5 @@ public interface UserMapper {
      * @param map
      * @return
      */
-    Long sumByMap(Map map);
+    Integer countByMap(Map map);
 }
